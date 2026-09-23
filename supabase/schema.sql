@@ -252,3 +252,27 @@ as $$
   order by p.embedding <=> query_embedding
   limit match_count;
 $$;
+
+
+-- Security hardening: server-side service-role access only.
+alter table public.merchants enable row level security;
+alter table public.customers enable row level security;
+alter table public.products enable row level security;
+alter table public.carts enable row level security;
+alter table public.cart_items enable row level security;
+alter table public.orders enable row level security;
+alter table public.order_items enable row level security;
+alter table public.payment_receipts enable row level security;
+alter table public.whatsapp_messages enable row level security;
+alter table public.audit_logs enable row level security;
+
+alter function public.approve_order(text, uuid) set search_path = public;
+alter function public.reject_order(text, uuid, text) set search_path = public;
+alter function public.match_products(vector, uuid, integer) set search_path = public;
+
+revoke execute on function public.approve_order(text, uuid) from public, anon, authenticated;
+revoke execute on function public.reject_order(text, uuid, text) from public, anon, authenticated;
+revoke execute on function public.match_products(vector, uuid, integer) from public, anon, authenticated;
+grant execute on function public.approve_order(text, uuid) to service_role;
+grant execute on function public.reject_order(text, uuid, text) to service_role;
+grant execute on function public.match_products(vector, uuid, integer) to service_role;
