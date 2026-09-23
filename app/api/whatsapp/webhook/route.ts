@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { respondAsStoreAgent, analyzeReceiptImage } from "@/lib/ai";
+import { demoProducts } from "@/lib/demo-data";
 import { sendWhatsAppText, downloadWhatsAppMedia } from "@/lib/whatsapp";
 import {
   merchantForWhatsAppNumber,
@@ -65,14 +66,11 @@ export async function POST(request: Request) {
       for (const change of entry.changes ?? []) {
         const value = change.value;
         const phoneNumberId = value?.metadata?.phone_number_id as string | undefined;
-
-        const merchant = phoneNumberId
-          ? await merchantForWhatsAppNumber(phoneNumberId)
-          : null;
+        const merchant = phoneNumberId ? await merchantForWhatsAppNumber(phoneNumberId) : null;
 
         const products = merchant
           ? await productsForMerchant(merchant.id)
-          : undefined;
+          : demoProducts;
 
         for (const message of value?.messages ?? []) {
           const from = message.from as string | undefined;
@@ -96,7 +94,7 @@ export async function POST(request: Request) {
           if (message.type === "text" && message.text?.body) {
             const result = await respondAsStoreAgent(
               message.text.body as string,
-              products?.length ? products : (await import("@/lib/demo-data")).demoProducts
+              products
             );
             await sendWhatsAppText(from, result.reply);
             continue;
