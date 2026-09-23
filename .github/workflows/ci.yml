@@ -17,7 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Install
         run: npm install
       - name: Typecheck
@@ -28,4 +27,5 @@ jobs:
         run: |
           test -f app/api/health/route.ts
           test -f app/api/whatsapp/webhook/route.ts
+          test -f app/api/payments/analyze-receipt/route.ts
           test -f supabase/schema.sql
