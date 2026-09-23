@@ -1,11 +1,12 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { respondAsStoreAgent, analyzeReceiptImage } from "@/lib/ai";
-import { demoProducts } from "@/lib/demo-data";
 import { sendWhatsAppText, downloadWhatsAppMedia } from "@/lib/whatsapp";
+import { demoProducts } from "@/lib/demo-data";
 import {
   merchantForWhatsAppNumber,
   productsForMerchant,
   rememberInboundWhatsAppMessage,
+  markInboundWhatsAppMessageProcessed,
 } from "@/lib/live-store";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +67,9 @@ export async function POST(request: Request) {
       for (const change of entry.changes ?? []) {
         const value = change.value;
         const phoneNumberId = value?.metadata?.phone_number_id as string | undefined;
-        const merchant = phoneNumberId ? await merchantForWhatsAppNumber(phoneNumberId) : null;
+        const merchant = phoneNumberId
+          ? await merchantForWhatsAppNumber(phoneNumberId)
+          : null;
 
         const products = merchant
           ? await productsForMerchant(merchant.id)
@@ -78,8 +81,10 @@ export async function POST(request: Request) {
 
           if (!from) continue;
 
+          let shouldProcess = true;
+
           if (merchant && messageId) {
-            const isNew = await rememberInboundWhatsAppMessage({
+            shouldProcess = await rememberInboundWhatsAppMessage({
               merchantId: merchant.id,
               customerPhone: from,
               messageId,
@@ -87,16 +92,17 @@ export async function POST(request: Request) {
               textBody: message.text?.body as string | undefined,
               mediaId: message.image?.id as string | undefined,
             });
-
-            if (!isNew) continue;
           }
 
+          if (!shouldProcess) continue;
+
           if (message.type === "text" && message.text?.body) {
-            const result = await respondAsStoreAgent(
-              message.text.body as string,
-              products
-            );
+            const result = await respondAsStoreAgent(message.text.body as string, products);
             await sendWhatsAppText(from, result.reply);
+
+            if (merchant && messageId) {
+              await markInboundWhatsAppMessageProcessed(merchant.id, messageId);
+            }
             continue;
           }
 
@@ -105,10 +111,23 @@ export async function POST(request: Request) {
             const receipt = await analyzeReceiptImage(media.buffer, media.mimeType);
 
             const reply = receipt.amount
-              ? `تم استلام صورة السند. المبلغ المقروء: ${receipt.amount} ر.ي. المرجع: ${receipt.reference ?? "غير واضح"}. تمت إحالة العملية للمراجعة البشرية؛ تحليل الصورة لا يثبت الدفع.`
+              ? "تم استلام صورة السند. المبلغ المقروء: " +
+                receipt.amount +
+                " ر.ي. المرجع: " +
+                (receipt.reference ?? "غير واضح") +
+                ". تمت إحالة العملية للمراجعة البشرية؛ تحليل الصورة لا يثبت الدفع."
               : "تم استلام صورة السند، لكن تعذر استخراج المبلغ بثقة كافية. تمت إحالة العملية للمراجعة البشرية.";
 
             await sendWhatsAppText(from, reply);
+
+            if (merchant && messageId) {
+              await markInboundWhatsAppMessageProcessed(merchant.id, messageId);
+            }
+            continue;
+          }
+
+          if (merchant && messageId) {
+            await markInboundWhatsAppMessageProcessed(merchant.id, messageId);
           }
         }
       }
@@ -117,6 +136,9 @@ export async function POST(request: Request) {
     return Response.json({ ok: true });
   } catch (error) {
     console.error("whatsapp webhook error", error);
-    return Response.json({ ok: false }, { status: 200 });
+    return Response.json(
+      { ok: false, error: "processing_failed" },
+      { status: 500 }
+    );
   }
 }
