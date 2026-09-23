@@ -1,3 +1,103 @@
-# يمن كومرس AI
+# يمن كومرس AI — WhatsApp Commerce Agent 🇾🇪
 
-مشروع وكيل تجارة وذكاء اصطناعي عبر WhatsApp Cloud API للمتاجر اليمنية.
+منصة MVP عربية لبناء وكيل تجارة إلكترونية يعمل عبر WhatsApp Cloud API للمتاجر اليمنية.
+
+## ما تم بناؤه
+
+- لوحة تحكم RTL متجاوبة.
+- محادثة تجريبية لوكيل المتجر.
+- Rule Engine للطلبات الشائعة قبل استدعاء Gemini.
+- تكامل اختياري مع @google/genai للردود وتحليل سندات الدفع.
+- Webhook للتحقق من WhatsApp واستقبال الرسائل النصية.
+- إرسال رسائل نصية عبر WhatsApp Cloud API.
+- نقطة API لتحليل صور سندات الدفع عبر Gemini Vision.
+- دورة Human-in-the-loop لتأكيد أو رفض الطلب.
+- مسارات API لاعتماد ورفض الطلب.
+- وضع Demo يعمل بدون مفاتيح خارجية.
+- مخطط Supabase/PostgreSQL للمتجر والكتالوج والسلات والطلبات والدفع وسجل التدقيق.
+- دالة PostgreSQL ذرّية لخصم المخزون عند اعتماد الطلب.
+- بحث دلالي للمنتجات عبر pgvector.
+- PWA manifest أساسي.
+- GitHub Actions للتحقق من TypeScript وبناء الإنتاج.
+
+## التشغيل
+
+1. ثبّت الاعتماديات: npm install
+2. انسخ .env.example إلى .env.local
+3. شغّل npm run dev
+4. افتح http://localhost:3000
+
+الوضع الافتراضي تجريبي؛ لا تحتاج مفاتيح Gemini أو Supabase أو WhatsApp لعرض الواجهة واختبار تدفقها.
+
+## Gemini
+
+ضع في .env.local:
+
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-flash-latest
+
+لا تضع المفتاح في كود المتصفح أو داخل المستودع.
+
+## Supabase
+
+ضع:
+
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=...
+NEXT_PUBLIC_DEMO_MODE=false
+
+ثم نفّذ supabase/schema.sql في SQL Editor داخل مشروع Supabase.
+
+مفتاح SUPABASE_SERVICE_ROLE_KEY مخصص للخادم فقط.
+
+## WhatsApp Cloud API
+
+ضع:
+
+WHATSAPP_VERIFY_TOKEN=...
+WHATSAPP_ACCESS_TOKEN=...
+WHATSAPP_PHONE_NUMBER_ID=...
+WHATSAPP_GRAPH_VERSION=...
+
+واجعل عنوان Webhook:
+
+https://YOUR-DOMAIN.com/api/whatsapp/webhook
+
+مسار GET موجود للتحقق، وPOST يستقبل رسائل العملاء.
+
+## تحليل سند الدفع
+
+النقطة:
+
+POST /api/payments/analyze-receipt
+
+وترسل لها صورة باسم file بصيغة multipart/form-data.
+
+يتم استخراج:
+- المبلغ الظاهر.
+- الرقم المرجعي.
+- درجة الثقة.
+- ملاحظة تحليلية.
+
+التحليل لا يعني إثبات الدفع؛ اعتماد الدفع النهائي يبقى قرارًا بشريًا.
+
+## المسار التجاري
+
+عميل → WhatsApp → Webhook → Rule Engine / Gemini → الكتالوج والمخزون → السلة والطلب → سند الدفع → تحليل AI → مراجعة التاجر → تأكيد وخصم المخزون أو رفض دون خصم.
+
+## الاختبار في GitHub
+
+الـCI ينفذ npm install ثم npm run typecheck ثم npm run build.
+
+ولا يحتاج إلى الأسرار الخارجية أثناء البناء لأن التكاملات الخارجية اختيارية.
+
+## قبل الإنتاج
+
+لا يزال يلزم ربط حسابات Meta وSupabase وGemini الفعلية، وإضافة مصادقة التجار وRLS متعددة المستأجرين، وربط التخزين السحابي للفواتير، وتوثيق أي API دفع محلي قبل تفعيله.
+
+## البنية
+
+app/ يحتوي الواجهة ومسارات API.
+lib/ يحتوي منطق الوكيل وWhatsApp وSupabase والمنطق التجاري.
+supabase/schema.sql يحتوي مخطط قاعدة البيانات والدوال الذرّية.
+.github/workflows/ci.yml يحتوي فحص البناء الآلي.
