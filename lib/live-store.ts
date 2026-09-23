@@ -8,10 +8,11 @@ type DataClient = {
     select: (...args: string[]) => any;
     eq: (...args: string[]) => any;
     order: (...args: string[]) => any;
-    maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }>;
+    maybeSingle: () => Promise<{ data: any; error: { message: string } | null }>;
     upsert: (values: unknown, options?: unknown) => any;
     single: () => Promise<{ data: { id: string } | null; error: { message: string } | null }>;
     insert: (values: unknown) => Promise<{ error: { message: string } | null }>;
+    update: (values: unknown) => any;
   };
 };
 
@@ -71,13 +72,16 @@ export async function rememberInboundWhatsAppMessage(args: {
 
   const existing = await db
     .from("whatsapp_messages")
-    .select("id")
+    .select("id,processed_at")
     .eq("merchant_id", args.merchantId)
     .eq("wa_message_id", args.messageId)
     .maybeSingle();
 
   if (existing.error) throw new Error(existing.error.message);
-  if (existing.data) return false;
+
+  if (existing.data?.processed_at) return false;
+
+  if (existing.data) return true;
 
   const customer = await db
     .from("customers")
@@ -98,8 +102,25 @@ export async function rememberInboundWhatsAppMessage(args: {
     message_type: args.messageType,
     text_body: args.textBody ?? null,
     media_id: args.mediaId ?? null,
+    processed_at: null,
   });
 
   if (inserted.error) throw new Error(inserted.error.message);
   return true;
+}
+
+export async function markInboundWhatsAppMessageProcessed(
+  merchantId: string,
+  messageId: string
+) {
+  const db = dbClient();
+  if (!db) return;
+
+  const result = await db
+    .from("whatsapp_messages")
+    .update({ processed_at: new Date().toISOString() })
+    .eq("merchant_id", merchantId)
+    .eq("wa_message_id", messageId);
+
+  if (result.error) throw new Error(result.error.message);
 }
