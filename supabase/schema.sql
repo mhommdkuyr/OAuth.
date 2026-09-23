@@ -5,9 +5,17 @@ create table if not exists merchants (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   whatsapp_phone text,
+  whatsapp_phone_number_id text,
   logo_url text,
   created_at timestamptz not null default now()
 );
+
+alter table merchants
+  add column if not exists whatsapp_phone_number_id text;
+
+create unique index if not exists merchants_whatsapp_phone_number_id_uidx
+  on merchants(whatsapp_phone_number_id)
+  where whatsapp_phone_number_id is not null;
 
 create table if not exists customers (
   id uuid primary key default gen_random_uuid(),
@@ -102,6 +110,10 @@ create table if not exists whatsapp_messages (
   media_id text,
   created_at timestamptz not null default now()
 );
+
+create unique index if not exists whatsapp_messages_dedupe_uidx
+  on whatsapp_messages(merchant_id, wa_message_id)
+  where wa_message_id is not null;
 
 create table if not exists audit_logs (
   id uuid primary key default gen_random_uuid(),
