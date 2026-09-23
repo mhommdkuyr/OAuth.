@@ -8,12 +8,16 @@
 - محادثة تجريبية لوكيل المتجر.
 - Rule Engine للطلبات الشائعة قبل استدعاء Gemini.
 - تكامل اختياري مع @google/genai للردود وتحليل سندات الدفع.
-- Webhook للتحقق من WhatsApp واستقبال الرسائل النصية.
+- Webhook للتحقق من WhatsApp واستقبال الرسائل النصية والصور.
 - التحقق من توقيع Webhook عبر HMAC عند ضبط WHATSAPP_APP_SECRET.
-- إرسال رسائل نصية عبر WhatsApp Cloud API.
-- نقطة API لتحليل صور سندات الدفع عبر Gemini Vision.
+- ربط رقم WhatsApp بالمتجر داخل Supabase عبر whatsapp_phone_number_id.
+- تحميل كتالوج المتجر الحي من Supabase داخل الوكيل عند وضع التشغيل الحقيقي.
+- منع تكرار رسائل WhatsApp بالاعتماد على wa_message_id.
+- إرسال رسائل نصية وقوائم منتجات عبر WhatsApp Cloud API.
+- تحليل صور سندات الدفع عبر Gemini Vision.
 - دورة Human-in-the-loop لتأكيد أو رفض الطلب.
 - مسارات API لاعتماد ورفض الطلب.
+- حماية نقطة الإرسال الداخليّة عبر INTERNAL_API_TOKEN.
 - وضع Demo يعمل بدون مفاتيح خارجية.
 - مخطط Supabase/PostgreSQL للمتجر والكتالوج والسلات والطلبات والدفع وسجل التدقيق.
 - دالة PostgreSQL ذرّية لخصم المخزون عند اعتماد الطلب.
@@ -51,6 +55,8 @@ NEXT_PUBLIC_DEMO_MODE=false
 
 مفتاح SUPABASE_SERVICE_ROLE_KEY مخصص للخادم فقط.
 
+أضف للمتجر قيمة whatsapp_phone_number_id التي تطابق phone_number_id القادم من Webhook.
+
 ## WhatsApp Cloud API
 
 ضع:
@@ -67,6 +73,12 @@ https://YOUR-DOMAIN.com/api/whatsapp/webhook
 
 مسار GET موجود لتحقق Meta، وPOST يتحقق من توقيع x-hub-signature-256 إذا كان WHATSAPP_APP_SECRET مضبوطًا.
 
+نقطة الإرسال الداخليّة:
+
+POST /api/whatsapp/send
+
+وتتطلب Authorization: Bearer <INTERNAL_API_TOKEN> عند تعطيل Demo Mode.
+
 ## تحليل سند الدفع
 
 النقطة:
@@ -74,6 +86,8 @@ https://YOUR-DOMAIN.com/api/whatsapp/webhook
 POST /api/payments/analyze-receipt
 
 وترسل لها صورة باسم file بصيغة multipart/form-data.
+
+كما أن Webhook يتعامل مع رسائل الصور ويقرأ بيانات السند عبر Gemini Vision.
 
 يتم استخراج:
 - المبلغ الظاهر.
@@ -89,13 +103,20 @@ POST /api/payments/analyze-receipt
 
 ## الاختبار في GitHub
 
-الـCI ينفذ npm install ثم npm run typecheck ثم npm run build.
+الـCI ينفذ npm install ثم npm run typecheck ثم npm run build مع فحص ملفات التشغيل الأساسية.
 
-ولا يحتاج إلى الأسرار الخارجية أثناء البناء لأن التكاملات الخارجية اختيارية.
+آخر تحقق ناجح يتطلب أن يكون commit الحالي متوافقًا مع هذا الـworkflow.
 
 ## قبل الإنتاج
 
-لا يزال يلزم ربط حسابات Meta وSupabase وGemini الفعلية، وإضافة مصادقة التجار وRLS متعددة المستأجرين، وربط التخزين السحابي للفواتير، وربط بيانات الكتالوج الحقيقية بالوكيل بدل بيانات Demo، وتنفيذ إصدار PDF الفعلي للفواتير، وتوثيق أي API دفع محلي قبل تفعيله.
+لا يزال يلزم:
+- مصادقة التجار وإضافة RLS متعددة المستأجرين في Supabase.
+- ربط التخزين السحابي الدائم للصور والفواتير.
+- تنفيذ إصدار PDF الفعلي للفواتير بدل invoiceQueued فقط.
+- إنشاء سلة وطلب فعليين من محادثة WhatsApp وربطهما آليًا بالدفع.
+- ربط مزود دفع محلي بعد توفر API أو Webhooks موثقة.
+- إضافة جدولة السلات المتروكة والرسائل المسموح بها وفق سياسة حساب WhatsApp.
+- إضافة اختبارات تكامل حقيقية مع Meta وGemini وSupabase.
 
 ## البنية
 
