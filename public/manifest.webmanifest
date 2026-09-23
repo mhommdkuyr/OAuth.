@@ -1,0 +1,11 @@
+{
+  "name": "يمن كومرس AI",
+  "short_name": "Yemen AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07110f",
+  "theme_color": "#07110f",
+  "lang": "ar",
+  "dir": "rtl",
+  "description": "منصة ذكاء اصطناعي وتجارة إلكترونية عبر واتساب"
+}
