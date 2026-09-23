@@ -9,6 +9,7 @@
 - Rule Engine للطلبات الشائعة قبل استدعاء Gemini.
 - تكامل اختياري مع @google/genai للردود وتحليل سندات الدفع.
 - Webhook للتحقق من WhatsApp واستقبال الرسائل النصية.
+- التحقق من توقيع Webhook عبر HMAC عند ضبط WHATSAPP_APP_SECRET.
 - إرسال رسائل نصية عبر WhatsApp Cloud API.
 - نقطة API لتحليل صور سندات الدفع عبر Gemini Vision.
 - دورة Human-in-the-loop لتأكيد أو رفض الطلب.
@@ -55,6 +56,7 @@ NEXT_PUBLIC_DEMO_MODE=false
 ضع:
 
 WHATSAPP_VERIFY_TOKEN=...
+WHATSAPP_APP_SECRET=...
 WHATSAPP_ACCESS_TOKEN=...
 WHATSAPP_PHONE_NUMBER_ID=...
 WHATSAPP_GRAPH_VERSION=...
@@ -63,7 +65,7 @@ WHATSAPP_GRAPH_VERSION=...
 
 https://YOUR-DOMAIN.com/api/whatsapp/webhook
 
-مسار GET موجود للتحقق، وPOST يستقبل رسائل العملاء.
+مسار GET موجود لتحقق Meta، وPOST يتحقق من توقيع x-hub-signature-256 إذا كان WHATSAPP_APP_SECRET مضبوطًا.
 
 ## تحليل سند الدفع
 
@@ -93,7 +95,7 @@ POST /api/payments/analyze-receipt
 
 ## قبل الإنتاج
 
-لا يزال يلزم ربط حسابات Meta وSupabase وGemini الفعلية، وإضافة مصادقة التجار وRLS متعددة المستأجرين، وربط التخزين السحابي للفواتير، وتوثيق أي API دفع محلي قبل تفعيله.
+لا يزال يلزم ربط حسابات Meta وSupabase وGemini الفعلية، وإضافة مصادقة التجار وRLS متعددة المستأجرين، وربط التخزين السحابي للفواتير، وربط بيانات الكتالوج الحقيقية بالوكيل بدل بيانات Demo، وتنفيذ إصدار PDF الفعلي للفواتير، وتوثيق أي API دفع محلي قبل تفعيله.
 
 ## البنية
 
