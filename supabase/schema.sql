@@ -108,6 +108,7 @@ create table if not exists whatsapp_messages (
   message_type text not null,
   text_body text,
   media_id text,
+  processed_at timestamptz,
   created_at timestamptz not null default now()
 );
 
