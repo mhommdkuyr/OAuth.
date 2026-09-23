@@ -1,6 +1,17 @@
 import { getSupabaseAdmin } from "./supabase";
 import { isDemoMode } from "./config";
 
+type RpcClient = {
+  rpc(
+    functionName: string,
+    args: Record<string, unknown>
+  ): Promise<{ data: unknown; error: { message: string } | null }>;
+};
+
+function asRpcClient(client: NonNullable<ReturnType<typeof getSupabaseAdmin>>): RpcClient {
+  return client as unknown as RpcClient;
+}
+
 export async function approveOrder(orderId: string, paymentReviewId?: string) {
   const supabase = getSupabaseAdmin();
 
@@ -15,7 +26,7 @@ export async function approveOrder(orderId: string, paymentReviewId?: string) {
     };
   }
 
-  const { data, error } = await supabase.rpc("approve_order", {
+  const { data, error } = await asRpcClient(supabase).rpc("approve_order", {
     p_order_id: orderId.replace("#", ""),
     p_payment_receipt_id: paymentReviewId ?? null,
   });
@@ -42,7 +53,7 @@ export async function rejectOrder(
     };
   }
 
-  const { data, error } = await supabase.rpc("reject_order", {
+  const { data, error } = await asRpcClient(supabase).rpc("reject_order", {
     p_order_id: orderId.replace("#", ""),
     p_payment_receipt_id: paymentReviewId ?? null,
     p_reason: reason,
