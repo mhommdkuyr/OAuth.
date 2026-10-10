@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "يمن كومرس AI",
-  description: "وكيل تجارة وذكاء اصطناعي عبر واتساب للمتاجر اليمنية",
+  title: "يمن كومرس AI | مساعد التجارة عبر واتساب",
+  description: "منصة عربية تساعد المتاجر اليمنية على تنظيم المحادثات والكتالوج والطلبات عبر واتساب، مع دليل الاستخدام والخصوصية والأمان.",
   manifest: "/manifest.webmanifest",
 };
 
