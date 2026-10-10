@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "./marketing.css";
 
 const features = [
   { icon: "✦", title: "مساعد ذكي عبر واتساب", text: "يرد على الأسئلة المتكررة، يفهم طلبات العملاء بالعربية، ويساعدهم في الوصول إلى المنتجات المناسبة." },
